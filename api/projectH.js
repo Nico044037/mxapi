@@ -6,7 +6,7 @@ export default async function handler(req, res) {
 
   // Browser: redirect to the animated page
   if (isBrowser) {
-    return res.redirect(302, "https://api.mxservers.online/projectH/");
+    return res.redirect(302, "https://api.mxservers.online/projectH/download.html");
   }
 
   // curl: download the PDF
