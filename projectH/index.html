@@ -8,27 +8,60 @@
 </head>
 <body>
 <script>
-(async () => {
-  const url = 'https://github.com/Nico044037/mxapi/releases/download/releases/Project_H_Anmeldeformular.pdf';
-  try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Download failed');
-    const blob = await response.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = objectUrl;
-    link.download = 'Project_H_Anmeldeformular.pdf';
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
-    // Ask the browser to close this tab after starting the download.
-    setTimeout(() => { window.open('', '_self'); window.close(); }, 1200);
-  } catch (_) {
-    // Fallback: open the release file directly if browser cross-origin rules block fetch.
-    window.location.replace(url);
+(() => {
+  const fileUrl = 'https://github.com/Nico044037/mxapi/releases/download/releases/Project_H_Anmeldeformular.pdf';
+  const fileName = 'Project_H_Anmeldeformular.pdf';
+
+  // Open the status window immediately; browsers may block popups not triggered by a click.
+  let statusWindow = null;
+  try { statusWindow = window.open('', 'projectHDownloadStatus', 'width=460,height=300,resizable=yes'); } catch (_) {}
+
+  function showStatus(title, message, ok) {
+    if (!statusWindow || statusWindow.closed) return;
+    statusWindow.document.open();
+    statusWindow.document.write(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Project H Download Status</title><style>
+      body{font:16px system-ui,-apple-system,Segoe UI,sans-serif;margin:0;padding:28px;background:#f5f7fa;color:#182230}
+      main{background:white;border:1px solid #dce2ea;border-radius:14px;padding:24px;max-width:420px;margin:auto}
+      .badge{display:inline-block;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:700;background:${ok ? '#dcfce7' : '#fee2e2'};color:${ok ? '#166534' : '#991b1b'}}
+      h1{font-size:22px;margin:16px 0 8px}p{line-height:1.5;color:#465365;overflow-wrap:anywhere}
+      button{margin-top:12px;border:0;border-radius:8px;padding:10px 16px;background:#182230;color:white;font:inherit;cursor:pointer}
+    </style></head><body><main><span class="badge">${ok ? 'SUCCESS' : 'FAILED'}</span><h1>${title}</h1><p>${message}</p><button onclick="window.close()">Close window</button></main></body></html>`);
+    statusWindow.document.close();
+    statusWindow.focus();
   }
+
+  async function run() {
+    try {
+      showStatus('Download in progress', 'Connecting to GitHub and retrieving the PDF…', true);
+      const response = await fetch(fileUrl);
+      if (!response.ok) throw new Error('GitHub returned HTTP ' + response.status);
+      const blob = await response.blob();
+      if (!blob.size) throw new Error('The downloaded file is empty.');
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = fileName;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      showStatus('Download started successfully', `${fileName} was retrieved from GitHub and the browser download was triggered. Your browser may still ask where to save it.`, true);
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+      setTimeout(() => { try { window.close(); } catch (_) {} }, 1500);
+    } catch (error) {
+      showStatus('Automatic download failed', `The PDF could not be fetched automatically (${error.message}). You can download it directly using the link below.`, false);
+      if (statusWindow && !statusWindow.closed) {
+        const p = statusWindow.document.querySelector('main p');
+        if (p) {
+          const a = statusWindow.document.createElement('a');
+          a.href = fileUrl; a.textContent = 'Download PDF from GitHub'; a.style.display = 'inline-block'; a.style.marginTop = '8px';
+          p.appendChild(statusWindow.document.createElement('br'));
+          p.appendChild(a);
+        }
+      }
+    }
+  }
+  run();
 })();
 </script>
 </body>
