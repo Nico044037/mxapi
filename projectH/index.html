@@ -23,6 +23,8 @@
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+    // Ask the browser to close this tab after starting the download.
+    setTimeout(() => { window.open('', '_self'); window.close(); }, 1200);
   } catch (_) {
     // Fallback: open the release file directly if browser cross-origin rules block fetch.
     window.location.replace(url);
