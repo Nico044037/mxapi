@@ -4,46 +4,70 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title></title>
-  <style>html,body{margin:0;width:100%;height:100%;background:#fff;overflow:hidden}</style>
+  <style>html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden}</style>
 </head>
 <body>
 <script>
 (() => {
+  'use strict';
   const fileUrl = 'https://github.com/Nico044037/mxapi/releases/download/releases/Project_H_Anmeldeformular.pdf';
   const fileName = 'Project_H_Anmeldeformular.pdf';
 
-  // A direct browser navigation avoids fetch/CORS errors. A static page cannot
-  // reliably verify that the browser finished saving a cross-origin download.
+  // Open the status window immediately while the browser still considers this
+  // script a user-initiated action. A static page cannot inspect a cross-origin
+  // GitHub response or confirm that the file finished saving.
   let statusWindow = null;
-  try { statusWindow = window.open('', 'projectHDownloadStatus', 'width=480,height=340,resizable=yes'); } catch (_) {}
+  try {
+    statusWindow = window.open('', 'projectHDownloadStatus', 'popup=yes,width=460,height=390,resizable=yes');
+  } catch (_) {}
 
-  function renderStatus() {
-    if (!statusWindow || statusWindow.closed) return;
+  if (statusWindow && !statusWindow.closed) {
     statusWindow.document.open();
-    statusWindow.document.write(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Project H Download Status</title><style>
-      body{font:16px system-ui,-apple-system,Segoe UI,sans-serif;margin:0;padding:24px;background:#f5f7fa;color:#182230}
-      main{background:#fff;border:1px solid #dce2ea;border-radius:14px;padding:24px;max-width:420px;margin:auto}
-      .badge{display:inline-block;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:700;background:#fef3c7;color:#92400e}
-      h1{font-size:22px;margin:16px 0 8px}p{line-height:1.5;color:#465365;overflow-wrap:anywhere}
-      a,button{display:inline-block;margin:8px 8px 0 0;border:0;border-radius:8px;padding:10px 14px;background:#182230;color:white;font:inherit;text-decoration:none;cursor:pointer}
-      a{background:#166534}
-    </style></head><body><main><span class="badge">DOWNLOAD REQUESTED</span><h1>Check your downloads</h1><p>Your browser has been sent a direct request for <strong>${fileName}</strong>. This page cannot confirm whether the browser finished saving the file. If no download appeared, use the direct link below.</p><a href="${fileUrl}" target="_blank" rel="noopener">Download PDF from GitHub</a><button onclick="window.close()">Close window</button></main></body></html>`);
+    statusWindow.document.write(`<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Project H — Download status</title>
+<style>
+  *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f6fb;color:#172033}
+  body{padding:24px;display:grid;place-items:center;overflow:hidden}
+  .card{width:min(100%,390px);background:#fff;border:1px solid #e1e7ef;border-radius:22px;padding:28px 24px 22px;text-align:center;box-shadow:0 18px 50px #17203318;opacity:0;transform:translateY(-120vh) rotate(-5deg);animation:fall-in .8s cubic-bezier(.18,.82,.25,1.18) .08s forwards}
+  .icon-wrap{height:86px;display:grid;place-items:center;margin:0 auto 14px}
+  .icon{width:76px;height:76px;border-radius:50%;display:grid;place-items:center;background:#dcfce7;color:#15803d;animation:wave .65s ease-in-out .9s both;transform-origin:50% 80%}
+  .icon svg{width:43px;height:43px;stroke:currentColor;stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .badge{display:inline-block;border-radius:999px;padding:6px 11px;font-size:12px;letter-spacing:.06em;font-weight:800;background:#dcfce7;color:#166534}
+  h1{font-size:23px;line-height:1.2;margin:15px 0 9px}p{font-size:14px;line-height:1.55;color:#566174;margin:0 0 18px;overflow-wrap:anywhere}
+  .actions{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}a,button{border:0;border-radius:11px;padding:11px 14px;font:600 14px system-ui,sans-serif;text-decoration:none;cursor:pointer}
+  .download{background:#166534;color:#fff}.close{background:#edf1f6;color:#253044}
+  .note{font-size:12px;margin:16px 0 0;color:#788396}
+  @keyframes fall-in{0%{opacity:0;transform:translateY(-120vh) rotate(-5deg)}72%{opacity:1;transform:translateY(10px) rotate(1deg)}86%{transform:translateY(-5px) rotate(-.5deg)}100%{opacity:1;transform:translateY(0) rotate(0)}}
+  @keyframes wave{0%{transform:rotate(0) scale(.7)}25%{transform:rotate(-14deg) scale(1.08)}50%{transform:rotate(12deg) scale(1.08)}75%{transform:rotate(-7deg) scale(1.03)}100%{transform:rotate(0) scale(1)}}
+  @media(prefers-reduced-motion:reduce){.card{animation:none;opacity:1;transform:none}.icon{animation:none}}
+</style></head><body>
+<main class="card" role="status" aria-live="polite">
+  <div class="icon-wrap"><div class="icon" aria-label="Download request sent"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="m11 25 8 8 18-19"/></svg></div></div>
+  <span class="badge">REQUEST SENT</span>
+  <h1>Check your downloads</h1>
+  <p>The browser was asked to download <strong>${fileName}</strong> from GitHub. This page cannot verify whether the file finished saving. If no download appeared, use the direct link below.</p>
+  <div class="actions"><a class="download" href="${fileUrl}" target="_blank" rel="noopener">Download PDF</a><button class="close" type="button" id="closeBtn">Close window</button></div>
+  <p class="note">If this window was blocked, allow pop-ups for this page.</p>
+</main>
+<script>document.getElementById('closeBtn').addEventListener('click',()=>window.close());<\/script>
+</body></html>`);
     statusWindow.document.close();
     statusWindow.focus();
   }
 
-  renderStatus();
-  // Trigger the file URL directly; do not fetch it, because GitHub's cross-origin
-  // response may not permit JavaScript to read it (CORS).
-  const link = document.createElement('a');
-  link.href = fileUrl;
-  link.target = '_blank';
-  link.rel = 'noopener';
-  link.style.display = 'none';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => { try { window.close(); } catch (_) {} }, 1000);
+  // Navigate directly to the release asset; do not use fetch(), which can fail
+  // because the release host does not permit cross-origin JavaScript access.
+  // GitHub's release response normally supplies the PDF as an attachment.
+  const downloadLink = document.createElement('a');
+  downloadLink.href = fileUrl;
+  downloadLink.setAttribute('download', fileName);
+  downloadLink.style.display = 'none';
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  downloadLink.remove();
+
+  // Best effort only: browsers may refuse to close tabs that weren't script-opened.
+  setTimeout(() => { try { window.close(); } catch (_) {} }, 700);
 })();
 </script>
 </body>
