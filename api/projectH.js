@@ -2,7 +2,8 @@
 
 export default async function handler(req, res) {
   const userAgent = req.headers["user-agent"] || "";
-  const isBrowser = /\b(Mozilla|Chrome|Safari|Firefox|Edg)\b/i.test(userAgent);
+  const isBrowser =
+    /\b(Mozilla|Chrome|Safari|Firefox|Edg)\b/i.test(userAgent);
 
   // Browser: redirect to the animated download page
   if (isBrowser) {
@@ -12,7 +13,7 @@ export default async function handler(req, res) {
     );
   }
 
-  // curl: retrieve the PDF from GitHub
+  // curl: download the PDF from GitHub
   const pdfUrl =
     "https://github.com/Nico044037/mxapi/releases/download/releases/Project_H_Anmeldeformular.pdf";
 
@@ -29,19 +30,20 @@ export default async function handler(req, res) {
 
     const pdf = Buffer.from(await response.arrayBuffer());
 
-    // Verify the actual file contents instead of trusting Content-Type.
+    // Verify that GitHub returned a real PDF
     if (pdf.length < 5 || pdf.subarray(0, 5).toString() !== "%PDF-") {
       return res
         .status(502)
         .send("GitHub did not return a PDF. Check the release asset URL.");
     }
 
+    // Set the correct download headers
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      'attachment; filename="Project_H_Anmeldeformular.pdf"'
+      'attachment; filename="Project_H_Anmeldeformular.pdf"; filename*=UTF-8\'\'Project_H_Anmeldeformular.pdf'
     );
-    res.setHeader("Content-Length", pdf.length);
+    res.setHeader("Content-Length", String(pdf.length));
     res.setHeader("Cache-Control", "no-store");
 
     return res.status(200).send(pdf);
