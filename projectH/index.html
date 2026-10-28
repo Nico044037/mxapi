@@ -12,56 +12,38 @@
   const fileUrl = 'https://github.com/Nico044037/mxapi/releases/download/releases/Project_H_Anmeldeformular.pdf';
   const fileName = 'Project_H_Anmeldeformular.pdf';
 
-  // Open the status window immediately; browsers may block popups not triggered by a click.
+  // A direct browser navigation avoids fetch/CORS errors. A static page cannot
+  // reliably verify that the browser finished saving a cross-origin download.
   let statusWindow = null;
-  try { statusWindow = window.open('', 'projectHDownloadStatus', 'width=460,height=300,resizable=yes'); } catch (_) {}
+  try { statusWindow = window.open('', 'projectHDownloadStatus', 'width=480,height=340,resizable=yes'); } catch (_) {}
 
-  function showStatus(title, message, ok) {
+  function renderStatus() {
     if (!statusWindow || statusWindow.closed) return;
     statusWindow.document.open();
     statusWindow.document.write(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Project H Download Status</title><style>
-      body{font:16px system-ui,-apple-system,Segoe UI,sans-serif;margin:0;padding:28px;background:#f5f7fa;color:#182230}
-      main{background:white;border:1px solid #dce2ea;border-radius:14px;padding:24px;max-width:420px;margin:auto}
-      .badge{display:inline-block;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:700;background:${ok ? '#dcfce7' : '#fee2e2'};color:${ok ? '#166534' : '#991b1b'}}
+      body{font:16px system-ui,-apple-system,Segoe UI,sans-serif;margin:0;padding:24px;background:#f5f7fa;color:#182230}
+      main{background:#fff;border:1px solid #dce2ea;border-radius:14px;padding:24px;max-width:420px;margin:auto}
+      .badge{display:inline-block;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:700;background:#fef3c7;color:#92400e}
       h1{font-size:22px;margin:16px 0 8px}p{line-height:1.5;color:#465365;overflow-wrap:anywhere}
-      button{margin-top:12px;border:0;border-radius:8px;padding:10px 16px;background:#182230;color:white;font:inherit;cursor:pointer}
-    </style></head><body><main><span class="badge">${ok ? 'SUCCESS' : 'FAILED'}</span><h1>${title}</h1><p>${message}</p><button onclick="window.close()">Close window</button></main></body></html>`);
+      a,button{display:inline-block;margin:8px 8px 0 0;border:0;border-radius:8px;padding:10px 14px;background:#182230;color:white;font:inherit;text-decoration:none;cursor:pointer}
+      a{background:#166534}
+    </style></head><body><main><span class="badge">DOWNLOAD REQUESTED</span><h1>Check your downloads</h1><p>Your browser has been sent a direct request for <strong>${fileName}</strong>. This page cannot confirm whether the browser finished saving the file. If no download appeared, use the direct link below.</p><a href="${fileUrl}" target="_blank" rel="noopener">Download PDF from GitHub</a><button onclick="window.close()">Close window</button></main></body></html>`);
     statusWindow.document.close();
     statusWindow.focus();
   }
 
-  async function run() {
-    try {
-      showStatus('Download in progress', 'Connecting to GitHub and retrieving the PDF…', true);
-      const response = await fetch(fileUrl);
-      if (!response.ok) throw new Error('GitHub returned HTTP ' + response.status);
-      const blob = await response.blob();
-      if (!blob.size) throw new Error('The downloaded file is empty.');
-      const objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = objectUrl;
-      link.download = fileName;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      showStatus('Download started successfully', `${fileName} was retrieved from GitHub and the browser download was triggered. Your browser may still ask where to save it.`, true);
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
-      setTimeout(() => { try { window.close(); } catch (_) {} }, 1500);
-    } catch (error) {
-      showStatus('Automatic download failed', `The PDF could not be fetched automatically (${error.message}). You can download it directly using the link below.`, false);
-      if (statusWindow && !statusWindow.closed) {
-        const p = statusWindow.document.querySelector('main p');
-        if (p) {
-          const a = statusWindow.document.createElement('a');
-          a.href = fileUrl; a.textContent = 'Download PDF from GitHub'; a.style.display = 'inline-block'; a.style.marginTop = '8px';
-          p.appendChild(statusWindow.document.createElement('br'));
-          p.appendChild(a);
-        }
-      }
-    }
-  }
-  run();
+  renderStatus();
+  // Trigger the file URL directly; do not fetch it, because GitHub's cross-origin
+  // response may not permit JavaScript to read it (CORS).
+  const link = document.createElement('a');
+  link.href = fileUrl;
+  link.target = '_blank';
+  link.rel = 'noopener';
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => { try { window.close(); } catch (_) {} }, 1000);
 })();
 </script>
 </body>
