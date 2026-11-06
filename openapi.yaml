@@ -1,0 +1,91 @@
+openapi: 3.1.0
+info:
+  title: MXServers Plugin API
+  version: 1.0.0
+  description: API contract for the future MXServers Minecraft plugin. The plugin is not implemented yet.
+servers:
+  - url: https://api.mxservers.online/api/v1
+paths:
+  /health:
+    get:
+      summary: API health and plugin connection state
+      responses:
+        "200": { description: API reachable; pluginConnected is false until the plugin connects }
+  /servers/{serverId}/status:
+    get:
+      summary: Get server status and player counts
+      parameters:
+        - in: path
+          name: serverId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Server status }
+        "503": { description: Plugin has not connected }
+  /servers/{serverId}/players:
+    get:
+      summary: Get online players
+      parameters:
+        - in: path
+          name: serverId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Online player list }
+        "503": { description: Plugin has not connected }
+  /servers/{serverId}/map:
+    get:
+      summary: Get map provider metadata
+      parameters:
+        - in: path
+          name: serverId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Map integration metadata }
+        "503": { description: Plugin or map provider has not connected }
+  /plugin/heartbeat:
+    post:
+      summary: Plugin heartbeat and server registration
+      security:
+        - PluginKey: []
+      parameters:
+        - in: header
+          name: X-MX-Plugin-Key
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [serverId, serverName, minecraftVersion, onlinePlayers, maxPlayers]
+              properties:
+                serverId: { type: string, example: main }
+                serverName: { type: string, example: MXServers SMP }
+                minecraftVersion: { type: string, example: "1.21.8" }
+                onlinePlayers: { type: integer, minimum: 0 }
+                maxPlayers: { type: integer, minimum: 1 }
+                players:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      uuid: { type: string }
+                      username: { type: string }
+                map:
+                  type: object
+                  properties:
+                    provider: { type: string, example: bluemap }
+                    publicUrl: { type: string, format: uri }
+      responses:
+        "202": { description: Heartbeat accepted after storage is implemented }
+        "401": { description: Invalid plugin key }
+        "503": { description: Plugin receiver or persistent storage is not enabled }
+components:
+  securitySchemes:
+    PluginKey:
+      type: apiKey
+      in: header
+      name: X-MX-Plugin-Key
